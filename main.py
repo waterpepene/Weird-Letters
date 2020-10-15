@@ -1,14 +1,22 @@
 from GUI import *
 from functions import *
+import threading
 
 while True:
-    events, values = window.read()
+    winEvents, values = window.read()
 
-    if sg.WIN_CLOSED == events: quit()
+    if sg.WIN_CLOSED == winEvents: quit("Exiting")
 
-    if events == "-TOGGLE_TYPING-":     # if the "Start" button is clicked
-        with KeyboardEvents() as events:
-            for event in events:                                  # iterates over every keyboard event and replaces the
-                replace_letter(event.key, values["-EXCEPTION-"])  # letter unless it's present in values["-EXCEPTION-"].
+    dropdown_choice = str(values["__CHOICE__"]).strip()
 
-                if event.key == "Key.esc": break            # stop listening if ESC is pressed.
+    # updates the image depending on the value of the dropdown element
+    window["__KEY_REPRESENTATION__"].update(f"Images/{dropdown_choice}.png")
+
+    if winEvents == "__TOGGLE_TYPING__":     # if the "Start" button is clicked
+        threading.Thread(target=replace_letter, args=(dropdown_choice, values["__EXCEPTION__"], window),
+                         daemon=True).start()
+        window["__STATUS__"].update("Status: Started")
+
+    if winEvents == "__STOP__":
+        thread_comms.put("Stop")            # sending "Stop" to the thread above if the button "Stop" is clicked
+        window["__STATUS__"].update("Status: Stopped")
